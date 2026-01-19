@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Le Plein Malin</title>
     
     <!-- Tailwind CSS (via CDN) -->
@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         body {
@@ -33,7 +33,7 @@
 
         /* Jauge Aiguille Transition */
         #needle {
-            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); /* Effet rebond léger */
             transform-origin: bottom center;
         }
 
@@ -45,48 +45,73 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* Support pour les écrans avec encoche (iPhone X+) */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        .pt-safe {
+            padding-top: env(safe-area-inset-top, 20px);
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 overflow-hidden h-screen w-screen">
+<body class="bg-slate-50 text-slate-800 overflow-hidden h-[100dvh] w-screen relative">
 
     <!-- ==================== VUE 1 : SÉLECTION (Selection View) ==================== -->
-    <div id="view-selection" class="h-full w-full relative overflow-y-auto no-scrollbar bg-slate-50 transition-opacity duration-300">
+    <div id="view-selection" class="fixed inset-0 z-10 overflow-y-auto no-scrollbar bg-slate-50 transition-transform duration-300 ease-in-out">
         
-        <!-- Background Blobs -->
+        <!-- Background Blobs (Fixed pour ne pas scroller) -->
         <div class="fixed top-0 right-0 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
         <div class="fixed top-40 left-0 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 pointer-events-none"></div>
 
-        <div class="relative z-10 px-6 pt-8 pb-20">
-            <header class="mb-8">
-                <h1 class="text-3xl font-extrabold text-slate-900 leading-tight">
-                    Bonjour, <br/>
-                    <span class="text-blue-600">Quel véhicule ?</span>
-                </h1>
-                <p class="text-slate-400 text-sm mt-2 font-medium">Sélectionnez votre modèle pour un calcul précis.</p>
+        <div class="relative z-10 px-6 pt-safe mt-6 pb-24">
+            
+            <!-- HEADER AVEC SÉLECTEUR DE DEVISE -->
+            <header class="mb-6 flex justify-between items-start">
+                <div class="flex-1 pr-4">
+                    <h1 class="text-3xl font-extrabold text-slate-900 leading-tight">
+                        Bonjour, <br/>
+                        <span class="text-blue-600">Quel véhicule ?</span>
+                    </h1>
+                    <p class="text-slate-400 text-sm mt-2 font-medium">Sélectionnez votre modèle.</p>
+                </div>
+                
+                <!-- Currency Selector -->
+                <div class="relative shrink-0">
+                    <select id="currency-selector" onchange="changeCurrency(this.value)" class="appearance-none bg-white/80 backdrop-blur border border-slate-200 text-slate-700 py-2 pl-3 pr-8 rounded-xl font-bold text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="XOF">🇨🇮 XOF</option>
+                        <option value="GNF">🇬🇳 GNF</option>
+                        <option value="NGN">🇳🇬 NGN</option>
+                        <option value="GHS">🇬🇭 GHS</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </div>
+                </div>
             </header>
 
             <!-- Search Bar Floating -->
-            <div class="sticky top-4 z-50 mb-8 flex gap-2">
-                <div class="flex-1 bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg shadow-slate-200/50 p-1 flex items-center border border-slate-100">
+            <div class="sticky top-2 z-50 mb-6">
+                <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg shadow-slate-200/50 p-1 flex items-center border border-slate-100 ring-1 ring-slate-100">
                     <div class="p-3">
                         <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
                     </div>
                     <input
                         type="text"
                         id="search-input"
-                        placeholder="Rechercher (ex: Changan, Corolla...)"
-                        class="w-full bg-transparent p-2 outline-none text-slate-700 font-medium placeholder-slate-300"
+                        placeholder="Rechercher (ex: Lexus, Tundra...)"
+                        class="w-full bg-transparent p-2 outline-none text-slate-700 font-medium placeholder-slate-400 text-base"
                     />
                 </div>
             </div>
 
             <!-- Liste des véhicules -->
-            <div class="space-y-8" id="vehicle-list-container">
+            <div class="space-y-6" id="vehicle-list-container">
                 
                 <!-- Bouton Ajout Manuel -->
-                <div onclick="openModal()" class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 shadow-lg shadow-blue-200 text-white flex items-center justify-between cursor-pointer active:scale-95 transition-transform">
+                <div onclick="openModal()" class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 shadow-lg shadow-blue-200 text-white flex items-center justify-between cursor-pointer active:scale-95 transition-transform touch-manipulation">
                     <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <i data-lucide="plus" class="w-6 h-6 text-white"></i>
                         </div>
                         <div>
@@ -98,7 +123,7 @@
                 </div>
 
                 <!-- Conteneur généré par JS -->
-                <div id="dynamic-list"></div>
+                <div id="dynamic-list" class="space-y-6"></div>
                 
                 <!-- État vide -->
                 <div id="empty-state" class="hidden text-center py-10 opacity-50">
@@ -111,135 +136,170 @@
     </div>
 
     <!-- ==================== VUE 2 : CALCULATEUR (Calculator View) ==================== -->
-    <div id="view-calculator" class="hidden h-full w-full bg-slate-900 text-white relative overflow-hidden flex flex-col transition-opacity duration-300">
+    <div id="view-calculator" class="fixed inset-0 z-20 bg-slate-900 text-white translate-x-full transition-transform duration-300 ease-in-out flex flex-col h-[100dvh]">
         
-        <!-- Dynamic Background -->
-        <div class="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-blue-900 to-slate-900 z-0"></div>
-        <div class="absolute -top-20 -right-20 w-80 h-80 bg-blue-600 rounded-full blur-[100px] opacity-20 animate-float"></div>
-
-        <div class="relative z-10 px-5 pt-6 flex flex-col h-full flex-grow">
+        <!-- Wrapper scrollable pour le contenu -->
+        <div class="flex-1 overflow-y-auto no-scrollbar relative flex flex-col">
             
-            <!-- Navigation Header -->
-            <div class="flex items-center justify-between mb-4">
-                <button onclick="switchView('selection')" class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
-                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
-                </button>
-                <div class="flex flex-col items-end">
-                    <span class="text-xs text-blue-300 font-medium uppercase tracking-wider">Véhicule</span>
-                    <span id="calc-vehicle-name" class="font-bold text-lg">Toyota Corolla</span>
-                </div>
-            </div>
+            <!-- Dynamic Background (Fixed inside view) -->
+            <div class="fixed top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-blue-900 to-slate-900 z-0 pointer-events-none"></div>
+            <div class="fixed -top-20 -right-20 w-80 h-80 bg-blue-600 rounded-full blur-[100px] opacity-20 animate-float pointer-events-none"></div>
 
-            <!-- JAUGE INTERACTIVE -->
-            <div class="mb-6 flex-grow-0">
-                <div class="bg-slate-800/50 backdrop-blur-sm rounded-[2rem] p-4 border border-white/5 shadow-2xl relative overflow-hidden">
-                    <div class="text-center mb-2">
-                        <span class="text-xs text-blue-300 font-medium uppercase tracking-wider flex items-center justify-center gap-1">
-                           <i data-lucide="zap" class="w-3 h-3"></i> Touchez la jauge
-                        </span>
-                    </div>
-
-                    <!-- SVG GAUGE CONTAINER -->
-                    <div id="gauge-container" class="mx-auto max-w-[300px] relative aspect-[2/1] select-none touch-none cursor-pointer">
-                        <svg viewBox="0 0 300 160" class="w-full h-full overflow-visible pointer-events-none">
-                            <path d="M 30 150 A 120 120 0 0 1 270 150" fill="none" stroke="#334155" stroke-width="15" stroke-linecap="round"></path>
-                            <path d="M 30 150 A 120 120 0 0 1 65 95" fill="none" stroke="#ef4444" stroke-width="15" stroke-linecap="round" opacity="0.8"></path>
-                            
-                            <!-- Ticks -->
-                            <line x1="20" y1="150" x2="45" y2="150" stroke="#fff" stroke-width="3"></line>
-                            <text x="15" y="145" fill="#ef4444" font-size="20" font-weight="bold" text-anchor="end" font-family="sans-serif">E</text>
-                            
-                            <line x1="150" y1="20" x2="150" y2="45" stroke="#fff" stroke-width="3"></line>
-                            <text x="150" y="15" fill="#94a3b8" font-size="16" font-weight="bold" text-anchor="middle" font-family="sans-serif">1/2</text>
-                            
-                            <line x1="280" y1="150" x2="255" y2="150" stroke="#fff" stroke-width="3"></line>
-                            <text x="285" y="145" fill="#fff" font-size="20" font-weight="bold" text-anchor="start" font-family="sans-serif">F</text>
-                            
-                            <line x1="65" y1="65" x2="82" y2="82" stroke="#64748b" stroke-width="2"></line>
-                            <line x1="235" y1="65" x2="218" y2="82" stroke="#64748b" stroke-width="2"></line>
-                            
-                            <!-- Fuel Icon SVG in Gauge -->
-                            <g transform="translate(136, 100) scale(0.8)">
-                               <path d="M3 6v15h13V6c0-1.7-1.3-3-3-3h-7c-1.7 0-3 1.3-3 3z" fill="none" stroke="#64748b" stroke-width="2"/>
-                               <path d="M16 10h4v6" fill="none" stroke="#64748b" stroke-width="2"/>
-                            </g>
-                        </svg>
-
-                        <!-- Aiguille (DOM Element) -->
-                        <div class="absolute bottom-0 left-1/2 w-0 h-0 pointer-events-none">
-                            <div id="needle" class="w-1 h-32 bg-red-500 origin-bottom rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)] absolute bottom-0 -left-0.5" style="transform: rotate(-45deg);">
-                                <div class="absolute -bottom-3 -left-3 w-7 h-7 bg-slate-200 rounded-full border-4 border-slate-800 shadow-lg"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Invisible Hitbox -->
-                        <div class="absolute inset-0"></div>
-                    </div>
-
-                    <div class="text-center mt-2 relative z-20">
-                        <div class="inline-block bg-slate-900/80 px-4 py-1 rounded-full border border-white/10">
-                          <span id="gauge-text" class="text-2xl font-black tracking-tighter text-white">25</span>
-                          <span class="text-sm text-slate-400 font-light ml-1">%</span>
-                        </div>
+            <div class="relative z-10 px-5 pt-safe mt-4 flex flex-col min-h-full">
+                
+                <!-- Navigation Header -->
+                <div class="flex items-center justify-between mb-2 shrink-0 h-12">
+                    <button onclick="switchView('selection')" class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-95 transition-transform touch-manipulation shrink-0">
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
+                    </button>
+                    <!-- Conteneur texte avec overflow hidden pour gérer les longs noms -->
+                    <div class="flex flex-col items-end max-w-[70%] overflow-hidden">
+                        <span class="text-[10px] text-blue-300 font-bold uppercase tracking-wider block">Véhicule</span>
+                        <span id="calc-vehicle-name" class="font-bold text-lg truncate block w-full text-right leading-tight">Toyota Corolla</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- SÉLECTEUR DE PRIX -->
-            <div class="bg-slate-800/30 rounded-2xl p-2 mb-6 flex gap-2 border border-white/5 flex-grow-0">
-                <button onclick="setPrice(875)" id="btn-super" class="flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20">
-                    <i data-lucide="fuel" class="w-4 h-4"></i>
-                    <div class="text-left leading-none">
-                        <span class="block text-xs opacity-80">Super</span>
-                        <span class="font-bold">875 F</span>
-                    </div>
-                </button>
-                <button onclick="setPrice(715)" id="btn-gasoil" class="flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-slate-400 hover:bg-white/5">
-                    <i data-lucide="truck" class="w-4 h-4"></i>
-                    <div class="text-left leading-none">
-                        <span class="block text-xs opacity-80">Gasoil</span>
-                        <span class="font-bold">715 F</span>
-                    </div>
-                </button>
-            </div>
+                <!-- JAUGE INTERACTIVE -->
+                <div class="mb-4 shrink-0">
+                    <div class="bg-slate-800/50 backdrop-blur-sm rounded-[2rem] p-4 border border-white/5 shadow-2xl relative overflow-hidden">
+                        <div class="text-center mb-1">
+                            <span class="text-[10px] text-blue-300 font-bold uppercase tracking-wider flex items-center justify-center gap-1 animate-pulse">
+                               <i data-lucide="zap" class="w-3 h-3"></i> Glissez pour régler
+                            </span>
+                        </div>
 
-            <!-- TICKET DE RÉSULTAT -->
-            <div class="mt-auto">
-                <div class="relative">
-                    <!-- Décoration Ticket Top -->
-                    <div class="absolute -top-2 left-0 w-full h-4 bg-slate-900 z-20 rounded-b-xl"></div>
-                    
-                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-t-3xl p-6 text-slate-900 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] pb-8">
-                        <!-- Ligne pointillée -->
-                        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-1 bg-slate-300 rounded-full"></div>
+                        <!-- SVG GAUGE CONTAINER -->
+                        <div id="gauge-container" class="mx-auto w-full max-w-[280px] relative aspect-[2/1] select-none touch-none cursor-pointer">
+                            <svg viewBox="0 0 300 160" class="w-full h-full overflow-visible pointer-events-none">
+                                <path d="M 30 150 A 120 120 0 0 1 270 150" fill="none" stroke="#334155" stroke-width="15" stroke-linecap="round"></path>
+                                <path d="M 30 150 A 120 120 0 0 1 65 95" fill="none" stroke="#ef4444" stroke-width="15" stroke-linecap="round" opacity="0.8"></path>
+                                
+                                <!-- Ticks -->
+                                <line x1="20" y1="150" x2="45" y2="150" stroke="#fff" stroke-width="3"></line>
+                                <text x="15" y="145" fill="#ef4444" font-size="20" font-weight="bold" text-anchor="end" font-family="sans-serif">E</text>
+                                
+                                <line x1="150" y1="20" x2="150" y2="45" stroke="#fff" stroke-width="3"></line>
+                                <text x="150" y="15" fill="#94a3b8" font-size="16" font-weight="bold" text-anchor="middle" font-family="sans-serif">1/2</text>
+                                
+                                <line x1="280" y1="150" x2="255" y2="150" stroke="#fff" stroke-width="3"></line>
+                                <text x="285" y="145" fill="#fff" font-size="20" font-weight="bold" text-anchor="start" font-family="sans-serif">F</text>
+                                
+                                <line x1="65" y1="65" x2="82" y2="82" stroke="#64748b" stroke-width="2"></line>
+                                <line x1="235" y1="65" x2="218" y2="82" stroke="#64748b" stroke-width="2"></line>
+                                
+                                <!-- Fuel Icon SVG in Gauge -->
+                                <g transform="translate(136, 100) scale(0.8)">
+                                   <path d="M3 6v15h13V6c0-1.7-1.3-3-3-3h-7c-1.7 0-3 1.3-3 3z" fill="none" stroke="#64748b" stroke-width="2"/>
+                                   <path d="M16 10h4v6" fill="none" stroke="#64748b" stroke-width="2"/>
+                                </g>
+                            </svg>
 
-                        <div class="flex justify-between items-end mb-2">
-                            <span class="text-sm text-slate-500 font-bold uppercase tracking-wider">Montant à payer</span>
-                            <div class="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">
-                                <i data-lucide="droplets" class="w-3 h-3"></i>
-                                <span id="res-liters">0.0</span> L manquants
+                            <!-- Aiguille (DOM Element) -->
+                            <div class="absolute bottom-0 left-1/2 w-0 h-0 pointer-events-none">
+                                <div id="needle" class="w-1 h-32 bg-red-500 origin-bottom rounded-full shadow-[0_0_15px_rgba(239,68,68,0.6)] absolute bottom-0 -left-0.5" style="transform: rotate(-45deg);">
+                                    <div class="absolute -bottom-3 -left-3 w-7 h-7 bg-slate-200 rounded-full border-4 border-slate-800 shadow-lg"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Invisible Hitbox for easier touching -->
+                            <div class="absolute inset-0 z-20"></div>
+                        </div>
+
+                        <div class="text-center mt-2 relative z-20">
+                            <div class="inline-block bg-slate-900/80 px-4 py-1 rounded-full border border-white/10">
+                              <span id="gauge-text" class="text-3xl font-black tracking-tighter text-white">25</span>
+                              <span class="text-sm text-slate-400 font-light ml-1">%</span>
                             </div>
                         </div>
-                        
-                        <div class="flex items-baseline mb-4">
-                            <span id="res-cost" class="text-5xl font-black text-slate-900 tracking-tight">0</span>
-                            <span class="text-lg font-bold text-slate-400 ml-1">FCFA</span>
-                        </div>
-                        
-                        <!-- Actions Rapides -->
-                        <div class="grid grid-cols-2 gap-3 mt-4">
-                            <button onclick="shareResult()" class="flex items-center justify-center gap-2 bg-green-500 text-white py-3 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-green-500/20">
-                                <i data-lucide="share-2" class="w-5 h-5"></i>
-                                WhatsApp
-                            </button>
-                            <button onclick="openMaps()" class="flex items-center justify-center gap-2 bg-slate-200 text-slate-700 py-3 rounded-xl font-bold active:scale-95 transition-transform">
-                                <i data-lucide="map-pin" class="w-5 h-5"></i>
-                                Station
-                            </button>
-                        </div>
+                    </div>
+                </div>
 
-                        <div class="mt-4 pt-4 border-t border-slate-200 text-center">
-                            <p class="text-xs text-slate-500 font-medium">Autonomie estimée: +<span id="res-distance">0</span> km</p>
+                <!-- SÉLECTEUR DE PRIX -->
+                <div class="bg-slate-800/30 rounded-2xl p-2 mb-2 flex gap-2 border border-white/5 shrink-0">
+                    <button onclick="setPrice('super')" id="btn-super" class="flex-1 py-3 px-2 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 transition-all bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg touch-manipulation min-w-0">
+                        <i data-lucide="fuel" class="w-4 h-4 mb-1 sm:mb-0 shrink-0"></i>
+                        <div class="text-center sm:text-left leading-tight overflow-hidden">
+                            <span class="block text-[10px] opacity-80 uppercase font-bold truncate">Super</span>
+                            <span id="label-super" class="font-black text-sm whitespace-nowrap">875 F</span>
+                        </div>
+                    </button>
+                    <button onclick="setPrice('gasoil')" id="btn-gasoil" class="flex-1 py-3 px-2 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 transition-all text-slate-400 hover:bg-white/5 touch-manipulation min-w-0">
+                        <i data-lucide="truck" class="w-4 h-4 mb-1 sm:mb-0 shrink-0"></i>
+                        <div class="text-center sm:text-left leading-tight overflow-hidden">
+                            <span class="block text-[10px] opacity-80 uppercase font-bold truncate">Gasoil</span>
+                            <span id="label-gasoil" class="font-black text-sm whitespace-nowrap">715 F</span>
+                        </div>
+                    </button>
+                </div>
+                
+                <!-- INPUT PRIX MANUEL (Optimisé Layout) -->
+                <div class="mb-4 shrink-0 px-1">
+                     <div class="flex items-center justify-between bg-slate-800/40 rounded-xl p-3 border border-white/5 h-16">
+                        <label for="custom-price" class="text-xs uppercase font-bold text-slate-400 flex items-center gap-2 pl-1 shrink-0">
+                            <i data-lucide="edit-2" class="w-3.5 h-3.5 opacity-70"></i> 
+                            Autre prix
+                        </label>
+                        <!-- Container Flex pour input + unité : Alignement robuste -->
+                        <div class="flex items-baseline justify-end flex-grow">
+                            <input 
+                                type="number" 
+                                inputmode="decimal" 
+                                id="custom-price" 
+                                value="875" 
+                                class="bg-transparent border-b border-slate-600 w-28 text-right font-bold text-xl text-white focus:outline-none focus:border-blue-400 pb-0 mr-2 appearance-none m-0 rounded-none placeholder-slate-600" 
+                                oninput="setManualPrice(this.value)"
+                                onclick="this.select()"
+                            >
+                            <span id="currency-unit-label" class="text-[10px] font-bold text-slate-500 whitespace-nowrap">FCFA/L</span>
+                        </div>
+                     </div>
+                </div>
+
+                <!-- ESPACE FLEXIBLE POUR POUSSER LE TICKET EN BAS -->
+                <div class="flex-grow"></div>
+
+                <!-- TICKET DE RÉSULTAT (Sticky bottom visual effect) -->
+                <div class="mt-4 pb-safe">
+                    <div class="relative">
+                        <!-- Décoration Ticket Top -->
+                        <div class="absolute -top-2 left-0 w-full h-4 bg-slate-900 z-20 rounded-b-xl"></div>
+                        
+                        <div class="bg-gradient-to-br from-white to-blue-50 rounded-t-3xl p-6 text-slate-900 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                            <!-- Ligne pointillée -->
+                            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-1.5 bg-slate-300 rounded-full"></div>
+
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">À la pompe</span>
+                                <div class="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">
+                                    <i data-lucide="droplets" class="w-3 h-3"></i>
+                                    <span id="res-liters">0.0</span> L manquants
+                                </div>
+                            </div>
+                            
+                            <!-- Prix Final : Flex wrap pour éviter que le texte sorte -->
+                            <div class="flex items-baseline mb-5 flex-wrap break-words">
+                                <span id="res-cost" class="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-none mr-1">0</span>
+                                <span id="res-currency-symbol" class="text-lg font-bold text-slate-400">FCFA</span>
+                            </div>
+                            
+                            <!-- Actions Rapides -->
+                            <div class="grid grid-cols-2 gap-3 mt-auto">
+                                <button onclick="shareResult()" class="flex items-center justify-center gap-2 bg-green-500 text-white py-3.5 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-green-500/20 touch-manipulation text-sm sm:text-base whitespace-nowrap overflow-hidden">
+                                    <i data-lucide="share-2" class="w-4 h-4 shrink-0"></i>
+                                    WhatsApp
+                                </button>
+                                <button onclick="openMaps()" class="flex items-center justify-center gap-2 bg-slate-200 text-slate-700 py-3.5 rounded-xl font-bold active:scale-95 transition-transform touch-manipulation text-sm sm:text-base whitespace-nowrap overflow-hidden">
+                                    <i data-lucide="map-pin" class="w-4 h-4 shrink-0"></i>
+                                    Station
+                                </button>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-t border-slate-200 text-center">
+                                <p class="text-xs text-slate-500 font-medium">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                                    Autonomie estimée: +<span id="res-distance" class="font-bold text-slate-700">0</span> km
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -248,30 +308,34 @@
     </div>
 
     <!-- ==================== MODAL : AJOUT VÉHICULE ==================== -->
-    <div id="modal-manual" class="hidden fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-[float_0.3s_ease-out]">
-            <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
-                <i data-lucide="plus" class="w-6 h-6 text-blue-600"></i> Configurer mon véhicule
+    <div id="modal-manual" class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity duration-300">
+        <!-- Modal Content (Slide up on mobile, float on desktop) -->
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-[float_0.3s_ease-out] pb-safe">
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 sm:hidden"></div>
+            
+            <h3 class="text-xl font-bold mb-5 flex items-center gap-2 text-slate-800">
+                <i data-lucide="settings" class="w-6 h-6 text-blue-600"></i> Configurer
             </h3>
+            
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nom (ex: Ma BMW)</label>
-                    <input type="text" id="manual-name" class="w-full bg-slate-100 p-3 rounded-xl font-bold text-slate-800 outline-blue-500" placeholder="Nom du véhicule">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Nom du véhicule</label>
+                    <input type="text" id="manual-name" class="w-full bg-slate-100 p-3.5 rounded-xl font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-base appearance-none" placeholder="Ex: Ma BMW">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Réservoir (L)</label>
-                        <input type="number" id="manual-capacity" class="w-full bg-slate-100 p-3 rounded-xl font-bold text-slate-800 outline-blue-500 text-lg" placeholder="ex: 60">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Réservoir (L)</label>
+                        <input type="number" id="manual-capacity" class="w-full bg-slate-100 p-3.5 rounded-xl font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-lg appearance-none" placeholder="60">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Conso (L/100)</label>
-                        <input type="number" id="manual-consumption" class="w-full bg-slate-100 p-3 rounded-xl font-bold text-slate-800 outline-blue-500 text-lg" placeholder="ex: 12" value="12">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Conso (L/100)</label>
+                        <input type="number" id="manual-consumption" class="w-full bg-slate-100 p-3.5 rounded-xl font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-lg appearance-none" placeholder="12" value="12">
                     </div>
                 </div>
                 
-                <div class="flex gap-3 pt-2">
-                    <button onclick="closeModal()" class="flex-1 py-3 text-slate-500 font-bold">Annuler</button>
-                    <button onclick="submitManual()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200">Valider</button>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="closeModal()" class="flex-1 py-3.5 text-slate-500 font-bold bg-slate-100 rounded-xl active:scale-95 transition-transform touch-manipulation">Annuler</button>
+                    <button onclick="submitManual()" class="flex-1 py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-transform touch-manipulation">Valider</button>
                 </div>
             </div>
         </div>
@@ -279,35 +343,65 @@
 
     <!-- ==================== JAVASCRIPT LOGIC ==================== -->
     <script>
-        // --- DONNÉES MISES À JOUR (Consommations Réalistes Afrique) ---
-        const VEHICLE_DB = [
-            // Nouvel Ajout Spécifique
-            { id: 'chan_cs75', brand: 'Changan', model: 'CS75 Plus', type: 'SUV', capacity: 58, consumption: 14.3 }, // Calibré sur ~405km/plein
+        // --- CONFIGURATION DEVISES ---
+        const CURRENCIES = {
+            'XOF': { symbol: 'FCFA', name: 'Franc CFA', decimals: 0, presets: { super: 875, gasoil: 715 } },
+            'GNF': { symbol: 'GNF', name: 'Franc Guinéen', decimals: 0, presets: { super: 12000, gasoil: 12000 } }, // Approx
+            'NGN': { symbol: '₦', name: 'Naira', decimals: 0, presets: { super: 1000, gasoil: 1100 } }, // Approx
+            'GHS': { symbol: '₵', name: 'Cedi', decimals: 2, presets: { super: 15.50, gasoil: 15.90 } }, // Approx
+        };
 
+        // --- DONNÉES VÉHICULES ---
+        const VEHICLE_DB = [
+            { id: 'toy_tundra', brand: 'Toyota', model: 'Tundra', type: 'Pick-up', capacity: 100, consumption: 16.0 },
+            { id: 'lex_lx', brand: 'Lexus', model: 'LX 570 / 600', type: '4x4', capacity: 93, consumption: 18.0 },
+            { id: 'lex_gx', brand: 'Lexus', model: 'GX 460', type: '4x4', capacity: 87, consumption: 15.0 },
+            { id: 'lex_rx', brand: 'Lexus', model: 'RX 350', type: 'SUV', capacity: 72, consumption: 12.0 },
+            { id: 'honda_crv', brand: 'Honda', model: 'CR-V', type: 'SUV', capacity: 58, consumption: 9.5 },
+            { id: 'acura_mdx', brand: 'Acura', model: 'MDX', type: 'SUV', capacity: 72, consumption: 13.0 },
+            { id: 'honda_pilot', brand: 'Honda', model: 'Pilot', type: 'SUV', capacity: 74, consumption: 12.5 },
+            { id: 'ford_explorer', brand: 'Ford', model: 'Explorer', type: 'SUV', capacity: 70, consumption: 12.0 },
+            { id: 'chan_cs75', brand: 'Changan', model: 'CS75 Plus', type: 'SUV', capacity: 58, consumption: 14.3 },
             { id: 'moto_bajaj', brand: 'Bajaj', model: 'Boxer BM 150', type: 'Moto', capacity: 11, consumption: 3.0 },
-            { id: 'moto_tvs', brand: 'TVS', model: 'Apache / Neo', type: 'Moto', capacity: 10, consumption: 3.0 },
-            { id: 'suz_alto', brand: 'Suzuki', model: 'Alto / S-Presso', type: 'Citadine', capacity: 27, consumption: 5.5 },
+            { id: 'moto_tvs', brand: 'TVS', model: 'Apache / HLX', type: 'Moto', capacity: 12, consumption: 3.0 },
+            { id: 'suz_alto', brand: 'Suzuki', model: 'Alto 800', type: 'Citadine', capacity: 35, consumption: 5.5 },
+            { id: 'suz_spresso', brand: 'Suzuki', model: 'S-Presso', type: 'Citadine', capacity: 27, consumption: 5.5 },
             { id: 'toy_yaris', brand: 'Toyota', model: 'Yaris / Vitz', type: 'Citadine', capacity: 42, consumption: 7.5 },
+            { id: 'kia_picanto', brand: 'Kia', model: 'Picanto', type: 'Citadine', capacity: 35, consumption: 5.5 },
+            { id: 'suz_swift', brand: 'Suzuki', model: 'Swift', type: 'Citadine', capacity: 37, consumption: 5.5 },
+            { id: 'ren_kwid', brand: 'Renault', model: 'Kwid', type: 'Citadine', capacity: 28, consumption: 5.0 },
+            { id: 'ren_sandero', brand: 'Renault', model: 'Sandero', type: 'Citadine', capacity: 50, consumption: 6.5 },
             { id: 'toy_corolla', brand: 'Toyota', model: 'Corolla / Allex', type: 'Berline', capacity: 50, consumption: 9.0 },
+            { id: 'toy_camry', brand: 'Toyota', model: 'Camry', type: 'Berline', capacity: 50, consumption: 9.5 },
+            { id: 'toy_avensis', brand: 'Toyota', model: 'Avensis', type: 'Berline', capacity: 60, consumption: 10.0 },
             { id: 'peug_301', brand: 'Peugeot', model: '301 / C-Elysée', type: 'Berline', capacity: 50, consumption: 8.0 },
             { id: 'hyun_elantra', brand: 'Hyundai', model: 'Elantra', type: 'Berline', capacity: 50, consumption: 9.0 },
-            { id: 'toy_avensis', brand: 'Toyota', model: 'Avensis', type: 'Berline', capacity: 60, consumption: 10.0 },
+            { id: 'hyun_accent', brand: 'Hyundai', model: 'Accent', type: 'Berline', capacity: 45, consumption: 7.0 },
+            { id: 'kia_rio', brand: 'Kia', model: 'Rio', type: 'Berline', capacity: 45, consumption: 7.0 },
             { id: 'mer_c', brand: 'Mercedes', model: 'Classe C', type: 'Berline', capacity: 66, consumption: 10.5 },
-            { id: 'mer_e', brand: 'Mercedes', model: 'Classe E', type: 'Berline', capacity: 80, consumption: 11.5 },
+            { id: 'mer_e', brand: 'Mercedes', model: 'Classe E', type: 'Berline', capacity: 65, consumption: 11.5 },
             { id: 'mer_190', brand: 'Mercedes', model: '190 (W201)', type: 'Berline', capacity: 55, consumption: 10.0 },
             { id: 'peug_406', brand: 'Peugeot', model: '406 / 407', type: 'Berline', capacity: 70, consumption: 9.5 },
-            { id: 'ren_duster', brand: 'Renault', model: 'Duster', type: 'SUV', capacity: 50, consumption: 9.0 },
+            { id: 'nis_almera', brand: 'Nissan', model: 'Almera', type: 'Berline', capacity: 41, consumption: 6.5 },
+            { id: 'suz_dzire', brand: 'Suzuki', model: 'Dzire', type: 'Berline', capacity: 37, consumption: 5.5 },
             { id: 'toy_rav4', brand: 'Toyota', model: 'RAV4', type: 'SUV', capacity: 60, consumption: 11.0 },
+            { id: 'toy_rush', brand: 'Toyota', model: 'Rush', type: 'SUV', capacity: 45, consumption: 8.0 },
+            { id: 'toy_fortuner', brand: 'Toyota', model: 'Fortuner', type: '4x4', capacity: 80, consumption: 11.0 },
+            { id: 'toy_prado', brand: 'Toyota', model: 'Land Cruiser Prado', type: '4x4', capacity: 87, consumption: 14.0 },
+            { id: 'toy_v8', brand: 'Toyota', model: 'Land Cruiser V8', type: '4x4', capacity: 93, consumption: 17.0 },
+            { id: 'ren_duster', brand: 'Renault', model: 'Duster', type: 'SUV', capacity: 50, consumption: 9.0 },
             { id: 'hyun_tucson', brand: 'Hyundai', model: 'Tucson / ix35', type: 'SUV', capacity: 58, consumption: 11.5 },
+            { id: 'hyun_creta', brand: 'Hyundai', model: 'Creta', type: 'SUV', capacity: 50, consumption: 8.5 },
             { id: 'kia_sportage', brand: 'Kia', model: 'Sportage', type: 'SUV', capacity: 62, consumption: 11.5 },
+            { id: 'kia_sorento', brand: 'Kia', model: 'Sorento', type: 'SUV', capacity: 70, consumption: 10.0 },
             { id: 'nis_qashqai', brand: 'Nissan', model: 'Qashqai', type: 'SUV', capacity: 65, consumption: 9.0 },
+            { id: 'nis_patrol', brand: 'Nissan', model: 'Patrol (Y61)', type: '4x4', capacity: 95, consumption: 18.0 },
             { id: 'suz_vitara', brand: 'Suzuki', model: 'Grand Vitara', type: 'SUV', capacity: 66, consumption: 10.5 },
+            { id: 'mits_pajero_sport', brand: 'Mitsubishi', model: 'Pajero Sport', type: '4x4', capacity: 68, consumption: 11.5 },
             { id: 'toy_hilux', brand: 'Toyota', model: 'Hilux (Double Cab)', type: 'Pick-up', capacity: 80, consumption: 12.0 },
             { id: 'mits_l200', brand: 'Mitsubishi', model: 'L200 / Triton', type: 'Pick-up', capacity: 75, consumption: 12.0 },
             { id: 'ford_ranger', brand: 'Ford', model: 'Ranger', type: 'Pick-up', capacity: 80, consumption: 12.5 },
-            { id: 'toy_prado', brand: 'Toyota', model: 'Land Cruiser Prado', type: '4x4', capacity: 87, consumption: 14.0 },
-            { id: 'toy_v8', brand: 'Toyota', model: 'Land Cruiser V8', type: '4x4', capacity: 93, consumption: 17.0 },
-            { id: 'nis_patrol', brand: 'Nissan', model: 'Patrol', type: '4x4', capacity: 95, consumption: 18.0 },
+            { id: 'nis_hardbody', brand: 'Nissan', model: 'Hardbody (NP300)', type: 'Pick-up', capacity: 75, consumption: 11.0 },
             { id: 'toy_hiace', brand: 'Toyota', model: 'HiAce (Gbaka)', type: 'Utilitaire', capacity: 70, consumption: 13.0 },
             { id: 'mer_sprinter', brand: 'Mercedes', model: 'Sprinter', type: 'Utilitaire', capacity: 75, consumption: 14.0 },
         ];
@@ -320,24 +414,17 @@
         ];
 
         // --- STATE ---
-        let state = {
-            selectedVehicle: null,
-            currentLevel: 25,
-            fuelPrice: 875
-        };
+        let state = { selectedVehicle: null, currentLevel: 25, fuelPrice: 875, currency: 'XOF', fuelType: 'super' };
 
-        // --- NAVIGATION ---
         function switchView(viewName) {
             const selectionEl = document.getElementById('view-selection');
             const calculatorEl = document.getElementById('view-calculator');
             
             if (viewName === 'calculator') {
-                selectionEl.classList.add('hidden');
-                calculatorEl.classList.remove('hidden');
+                calculatorEl.classList.remove('translate-x-full');
                 updateCalculatorUI();
             } else {
-                selectionEl.classList.remove('hidden');
-                calculatorEl.classList.add('hidden');
+                calculatorEl.classList.add('translate-x-full');
             }
         }
 
@@ -347,24 +434,17 @@
 
         function closeModal() {
             document.getElementById('modal-manual').classList.add('hidden');
-            // Reset fields
             document.getElementById('manual-name').value = '';
             document.getElementById('manual-capacity').value = '';
             document.getElementById('manual-consumption').value = '12';
         }
 
-        // --- LOGIQUE METIER ---
-        
-        // 1. Rendu de la liste
         function renderVehicleList(filter = "") {
             const container = document.getElementById('dynamic-list');
             const emptyState = document.getElementById('empty-state');
             container.innerHTML = '';
             
-            let hasResults = false;
             const searchTerm = filter.toLowerCase();
-
-            // Filtrer globalement d'abord
             const filteredDB = VEHICLE_DB.filter(v => 
                 v.brand.toLowerCase().includes(searchTerm) || 
                 v.model.toLowerCase().includes(searchTerm)
@@ -381,25 +461,22 @@
                 const catVehicles = filteredDB.filter(v => cat.types.includes(v.type));
                 
                 if (catVehicles.length > 0) {
-                    hasResults = true;
-                    // Titre Catégorie
                     const titleDiv = document.createElement('div');
-                    titleDiv.className = 'flex items-center gap-2 mb-4 opacity-80 mt-6 first:mt-0';
+                    titleDiv.className = 'flex items-center gap-2 mb-2 opacity-70 sticky top-0 bg-slate-50/95 backdrop-blur py-2 z-10';
                     titleDiv.innerHTML = `
-                        <span class="p-1.5 rounded-lg ${cat.bg} ${cat.color}">
-                            <i data-lucide="${cat.icon}" class="w-4 h-4"></i>
+                        <span class="p-1 rounded-md ${cat.bg} ${cat.color}">
+                            <i data-lucide="${cat.icon}" class="w-3.5 h-3.5"></i>
                         </span>
-                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest">${cat.label}</h2>
+                        <h2 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${cat.label}</h2>
                     `;
                     container.appendChild(titleDiv);
 
-                    // Grid Véhicules
                     const gridDiv = document.createElement('div');
                     gridDiv.className = 'grid gap-3';
                     
                     catVehicles.forEach(vehicle => {
                         const card = document.createElement('div');
-                        card.className = 'group bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-500 hover:shadow-md transition-all duration-300 cursor-pointer flex items-center justify-between active:scale-[0.98]';
+                        card.className = 'group bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-500 transition-all duration-200 cursor-pointer flex items-center justify-between active:scale-[0.98] touch-manipulation';
                         card.onclick = () => selectVehicle(vehicle);
                         card.innerHTML = `
                             <div class="flex items-center gap-4">
@@ -420,12 +497,9 @@
                     container.appendChild(gridDiv);
                 }
             });
-            
-            // Re-render icons
             lucide.createIcons();
         }
 
-        // 2. Sélection
         function selectVehicle(vehicle) {
             state.selectedVehicle = vehicle;
             switchView('calculator');
@@ -437,61 +511,99 @@
             const cons = parseFloat(document.getElementById('manual-consumption').value);
 
             if (name && cap > 0) {
-                const customVehicle = {
+                state.selectedVehicle = {
                     id: 'custom_' + Date.now(),
                     brand: name,
                     model: '(Perso)',
                     type: 'Autre',
                     capacity: cap,
-                    consumption: cons > 0 ? cons : 12 // Utilisation de la conso définie ou 12 par défaut
+                    consumption: cons > 0 ? cons : 12
                 };
-                state.selectedVehicle = customVehicle;
                 closeModal();
                 switchView('calculator');
             } else {
-                alert("Veuillez entrer un nom et une capacité valide.");
+                alert("Nom et capacité requis.");
             }
         }
 
-        // 3. Logique de Calcul
+        // --- GESTION DEVISE ---
+        function changeCurrency(newCurrency) {
+            state.currency = newCurrency;
+            // Reset price to default for new currency
+            setPrice('super'); // Reset to default super price of new currency
+            updateCalculatorUI();
+        }
+
+        function setManualPrice(value) {
+            const price = parseFloat(value);
+            if (!isNaN(price) && price > 0) {
+                state.fuelPrice = price;
+                state.fuelType = 'manual';
+                updateCalculatorUI();
+            }
+        }
+
+        function setPrice(type) {
+            const currencyData = CURRENCIES[state.currency];
+            state.fuelPrice = currencyData.presets[type];
+            state.fuelType = type;
+            updateCalculatorUI();
+        }
+
         function updateCalculatorUI() {
+            const currencyData = CURRENCIES[state.currency];
+
+            // Update Labels in UI
+            document.getElementById('label-super').innerText = `${currencyData.presets.super} ${currencyData.symbol}`;
+            document.getElementById('label-gasoil').innerText = `${currencyData.presets.gasoil} ${currencyData.symbol}`;
+            document.getElementById('currency-unit-label').innerText = `${currencyData.symbol}/L`;
+            document.getElementById('res-currency-symbol').innerText = currencyData.symbol;
+
             if (!state.selectedVehicle) return;
 
-            // Header
             document.getElementById('calc-vehicle-name').innerText = `${state.selectedVehicle.brand} ${state.selectedVehicle.model}`;
             
-            // Calculs
             const litersToFill = state.selectedVehicle.capacity - ((state.selectedVehicle.capacity * state.currentLevel) / 100);
             const cost = litersToFill * state.fuelPrice;
             const distance = (litersToFill / state.selectedVehicle.consumption) * 100;
 
-            // MAJ DOM
             document.getElementById('res-liters').innerText = litersToFill.toFixed(1);
-            document.getElementById('res-cost').innerText = new Intl.NumberFormat('fr-FR').format(Math.round(cost));
+            
+            // Format Cost based on Currency Decimals
+            const formatter = new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: currencyData.decimals,
+                maximumFractionDigits: currencyData.decimals
+            });
+            document.getElementById('res-cost').innerText = formatter.format(cost);
             document.getElementById('res-distance').innerText = Math.round(distance);
+            
+            // Sync Input if needed
+            const customInput = document.getElementById('custom-price');
+            if (document.activeElement !== customInput) {
+                customInput.value = state.fuelPrice;
+            }
 
-            // Prix Boutons Style
             const btnSuper = document.getElementById('btn-super');
             const btnGasoil = document.getElementById('btn-gasoil');
             
-            if (state.fuelPrice === 875) {
-                btnSuper.className = "flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20";
-                btnGasoil.className = "flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-slate-400 hover:bg-white/5";
-            } else {
-                btnSuper.className = "flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-slate-400 hover:bg-white/5";
-                btnGasoil.className = "flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-gray-700 to-slate-600 text-white shadow-lg";
-            }
+            const activeClass = "flex-1 py-3 px-2 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 transition-all bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg touch-manipulation min-w-0";
+            const inactiveClass = "flex-1 py-3 px-2 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 transition-all text-slate-400 hover:bg-white/5 touch-manipulation min-w-0";
+            const gasoilActiveClass = "flex-1 py-3 px-2 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 transition-all bg-gradient-to-r from-gray-700 to-slate-600 text-white shadow-lg touch-manipulation min-w-0";
 
-            // MAJ Jauge Visuelle
+            // Reset classes
+            btnSuper.className = inactiveClass;
+            btnGasoil.className = inactiveClass;
+
+            if (state.fuelType === 'super') {
+                btnSuper.className = activeClass;
+            } else if (state.fuelType === 'gasoil') {
+                btnGasoil.className = gasoilActiveClass;
+            } else {
+                // Manual mode, buttons inactive
+            }
             updateGaugeVisuals();
         }
 
-        function setPrice(price) {
-            state.fuelPrice = price;
-            updateCalculatorUI();
-        }
-
-        // 4. Jauge Interactive Logic
         const gaugeContainer = document.getElementById('gauge-container');
         let isDragging = false;
 
@@ -505,12 +617,9 @@
             let angle = Math.atan2(y, x);
             let percent = 0;
             
-            // Mapping de l'angle à 0-100%
             if (angle > 0) {
                 percent = x < 0 ? 0 : 1;
             } else {
-                // angle est entre -PI (gauche) et 0 (droite)
-                // -PI => 0%, 0 => 100%
                 percent = 1 - (angle / -Math.PI);
             }
             
@@ -522,13 +631,10 @@
         function updateGaugeVisuals() {
             const percent = state.currentLevel;
             document.getElementById('gauge-text').innerText = percent;
-            
-            // Rotation: 0% = -90deg, 100% = 90deg
             const rotation = -90 + (percent / 100) * 180;
             document.getElementById('needle').style.transform = `rotate(${rotation}deg)`;
         }
 
-        // Listeners Jauge
         const startDrag = (e) => {
             isDragging = true;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -540,11 +646,12 @@
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             updateGaugeFromEvent(clientX, clientY);
+            e.preventDefault(); // Stop scroll when dragging gauge
         };
         const endDrag = () => { isDragging = false; };
 
         gaugeContainer.addEventListener('mousedown', startDrag);
-        gaugeContainer.addEventListener('touchstart', startDrag, {passive: false}); // passive: false pour prévenir le scroll si besoin
+        gaugeContainer.addEventListener('touchstart', startDrag, {passive: false});
         
         window.addEventListener('mousemove', moveDrag);
         window.addEventListener('touchmove', moveDrag, {passive: false});
@@ -552,37 +659,33 @@
         window.addEventListener('mouseup', endDrag);
         window.addEventListener('touchend', endDrag);
 
-        // 5. Actions Externes
         function shareResult() {
             if (!state.selectedVehicle) return;
+            const currencyData = CURRENCIES[state.currency];
             const liters = (state.selectedVehicle.capacity - ((state.selectedVehicle.capacity * state.currentLevel) / 100)).toFixed(1);
-            const cost = new Intl.NumberFormat('fr-FR').format(Math.round(liters * state.fuelPrice));
             
-            const text = `⛽ *Le Plein Malin*\n\n🚗 Véhicule: ${state.selectedVehicle.brand} ${state.selectedVehicle.model}\n📊 Jauge: ${state.currentLevel}%\n💧 Manque: ${liters} L\n💰 *Coût estimé: ${cost} FCFA*\n\nCalculé avec Le Plein Malin.`;
-            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
+            const formatter = new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: currencyData.decimals,
+                maximumFractionDigits: currencyData.decimals
+            });
+            const cost = formatter.format(liters * state.fuelPrice);
+
+            const text = `⛽ *Le Plein Malin*\n\n🚗 ${state.selectedVehicle.brand} ${state.selectedVehicle.model}\n📊 Jauge: ${state.currentLevel}%\n💧 Manque: ${liters} L\n💰 *${cost} ${currencyData.symbol}*\n\nCalculé avec Le Plein Malin.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function openMaps() {
             window.open('https://www.google.com/maps/search/station+service+proche', '_blank');
         }
 
-        // 6. Search Listener
         document.getElementById('search-input').addEventListener('input', (e) => {
             renderVehicleList(e.target.value);
         });
 
-        // --- INIT ---
         window.onload = () => {
             renderVehicleList();
             lucide.createIcons();
-            
-            // Empêcher le pull-to-refresh sur mobile qui gâche l'UX
-            document.body.addEventListener('touchmove', function(e) { 
-                if (isDragging) e.preventDefault();
-            }, { passive: false });
         };
-
     </script>
 </body>
 </html>
